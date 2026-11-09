@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/robot_state.dart';
 import '../providers/robot_provider.dart';
 
 class ConnectionScreen extends ConsumerStatefulWidget {
@@ -55,6 +56,10 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
                 : 'Sin conexión'),
           ),
         ),
+        if (session.connected) ...[
+          const SizedBox(height: 8),
+          _CalibrationCard(session: session),
+        ],
         const SizedBox(height: 16),
         TextField(
           controller: _host,
@@ -92,6 +97,47 @@ class _ConnectionScreenState extends ConsumerState<ConnectionScreen> {
             child: Text(_error!, style: const TextStyle(color: Colors.red)),
           ),
       ],
+    );
+  }
+}
+
+/// Paso de inicio: al colocar el objeto en la base el robot fija el origen (0,0).
+class _CalibrationCard extends ConsumerWidget {
+  const _CalibrationCard({required this.session});
+  final RobotSession session;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final st = session.status;
+    final waiting = st.state == RobotState.esperandoCarga;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Preparar el robot', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            if (waiting) ...[
+              const Text('1. Deja el robot en el punto de partida (la base).\n'
+                  '2. Coloca el objeto a transportar sobre la bandeja.\n'
+                  '3. Pulsa Calibrar: ese punto será el origen (0, 0) del mapa.'),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: ref.read(robotProvider.notifier).calibrate,
+                icon: const Icon(Icons.my_location),
+                label: const Text('Ya coloqué el objeto: Calibrar'),
+              ),
+            ] else if (st.calibrated)
+              Text('Calibrado. Posición actual: '
+                  '(${st.x.toStringAsFixed(2)}, ${st.y.toStringAsFixed(2)}) m. '
+                  '${st.hasLoad ? 'Lleva carga.' : 'Sin carga.'} '
+                  'Ve a la pestaña Mapa para elegir el destino.')
+            else
+              const Text('El robot no está calibrado. Pulsa Reiniciar en la pestaña Estado.'),
+          ],
+        ),
+      ),
     );
   }
 }

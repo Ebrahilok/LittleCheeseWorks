@@ -8,10 +8,11 @@ class StatusScreen extends ConsumerWidget {
   const StatusScreen({super.key});
 
   Color _color(RobotState s) => switch (s) {
-        RobotState.reposo => Colors.blueGrey,
+        RobotState.esperandoCarga => Colors.blueGrey,
+        RobotState.listo => Colors.green,
         RobotState.enRuta || RobotState.regresando => Colors.blue,
         RobotState.obstaculo => Colors.orange,
-        RobotState.esperando => Colors.green,
+        RobotState.entregando => Colors.teal,
         RobotState.error || RobotState.paro => Colors.red,
       };
 
@@ -36,11 +37,17 @@ class StatusScreen extends ConsumerWidget {
               children: [
                 Text(st.state.label,
                     key: const Key('stateLabel'),
+                    textAlign: TextAlign.center,
                     style: Theme.of(context)
                         .textTheme
                         .headlineMedium
                         ?.copyWith(color: _color(st.state))),
-                if (st.table != null) Text('Mesa ${st.table}'),
+                const SizedBox(height: 8),
+                Text('Posición: (${st.x.toStringAsFixed(2)}, ${st.y.toStringAsFixed(2)}) m'
+                    ' · ${st.hasLoad ? 'con carga' : 'sin carga'}'),
+                if (st.target != null)
+                  Text('Destino: (${st.target!.dx.toStringAsFixed(2)}, '
+                      '${st.target!.dy.toStringAsFixed(2)}) m'),
               ],
             ),
           ),
@@ -53,40 +60,41 @@ class StatusScreen extends ConsumerWidget {
           title: Text('Batería: ${st.battery}%'),
           subtitle: LinearProgressIndicator(value: st.battery / 100),
         ),
+        ListTile(
+          leading: const Icon(Icons.radar),
+          title: Text('Objetos detectados: ${session.objects.length}'),
+        ),
         if (st.obstacle)
           const ListTile(
             leading: Icon(Icons.warning, color: Colors.orange),
             title: Text('Obstáculo al frente'),
           ),
         const SizedBox(height: 12),
-        if (st.state == RobotState.esperando)
+        if (st.state == RobotState.entregando)
           FilledButton.icon(
-            onPressed: ctrl.confirmDelivery,
+            onPressed: ctrl.unload,
             icon: const Icon(Icons.check),
-            label: const Text('Recibido'),
+            label: const Text('Ya retiré la carga'),
           ),
         if (st.state.isFault)
           FilledButton.tonalIcon(
             onPressed: ctrl.reset,
             icon: const Icon(Icons.restart_alt),
-            label: const Text('Reiniciar a reposo'),
+            label: const Text('Reiniciar'),
           ),
         if (session.simulated) ...[
           const Divider(height: 32),
-          Text('Controles de simulación',
+          Text('Simulación (coloca objetos manteniendo pulsado el mapa)',
               style: Theme.of(context).textTheme.labelLarge),
           Wrap(
             spacing: 8,
             children: [
               OutlinedButton(
-                  onPressed: () => ctrl.simulator?.placeObstacle(),
-                  child: const Text('Poner obstáculo')),
+                  onPressed: () => ctrl.simulator?.removeLastObject(),
+                  child: const Text('Quitar último objeto')),
               OutlinedButton(
-                  onPressed: () => ctrl.simulator?.clearObstacle(),
-                  child: const Text('Quitar obstáculo')),
-              OutlinedButton(
-                  onPressed: () => ctrl.simulator?.loseLine(),
-                  child: const Text('Perder línea')),
+                  onPressed: () => ctrl.simulator?.loseLocalization(),
+                  child: const Text('Perder ubicación')),
             ],
           ),
         ],

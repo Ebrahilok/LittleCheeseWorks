@@ -16,6 +16,7 @@ class WebSocketRobotService implements RobotService {
 
   final _status = StreamController<RobotStatus>.broadcast();
   final _events = StreamController<RobotEvent>.broadcast();
+  final _objects = StreamController<ObjectEvent>.broadcast();
   final _connected = StreamController<bool>.broadcast();
 
   WebSocketChannel? _channel;
@@ -26,6 +27,8 @@ class WebSocketRobotService implements RobotService {
   Stream<RobotStatus> get statusStream => _status.stream;
   @override
   Stream<RobotEvent> get eventStream => _events.stream;
+  @override
+  Stream<ObjectEvent> get objectStream => _objects.stream;
   @override
   Stream<bool> get connectedStream => _connected.stream;
 
@@ -48,6 +51,7 @@ class WebSocketRobotService implements RobotService {
     final msg = RobotMessage.tryParse(data.toString());
     if (msg?.status != null) _status.add(msg!.status!);
     if (msg?.event != null) _events.add(msg!.event!);
+    if (msg?.object != null) _objects.add(msg!.object!);
   }
 
   void _resetWatchdog() {
@@ -72,6 +76,7 @@ class WebSocketRobotService implements RobotService {
     await _channel?.sink.close();
     await _status.close();
     await _events.close();
+    await _objects.close();
     await _connected.close();
   }
 }
