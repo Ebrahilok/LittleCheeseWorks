@@ -151,11 +151,11 @@ ESP32 en modo servidor WebSocket (puerto 81) sobre una red WiFi local o punto de
 ### 4.2 Máquina de estados del robot
 | Estado | Descripción | Transiciones |
 |---|---|---|
-| ESPERANDO_CARGA | En la base, sin carga/sin calibrar | `calibrate` → LISTO |
-| LISTO | Calibrado y con carga, esperando destino | `goto` → EN_RUTA |
+| ESPERANDO_CARGA | En la base, sin carga o sin calibrar | `calibrate` → LISTO; `goto` → EN_RUTA (si ya está calibrado) |
+| LISTO | Calibrado y con carga, esperando destino | `goto` → EN_RUTA (`goto` se acepta en cualquier estado sin falla mientras el robot esté calibrado, para cambiar el destino sin pararlo) |
 | EN_RUTA | Avanza hacia el destino | Obstáculo → OBSTACULO; llega → ENTREGANDO; ubicación perdida → ERROR |
 | OBSTACULO | Detenido por objeto | Despejado → estado previo; > 30 s → ERROR |
-| ENTREGANDO | En destino, espera retiro de la carga | `unload` o timeout 60 s → REGRESANDO |
+| ENTREGANDO | En destino, espera retiro de la carga | `unload` o timeout 60 s → REGRESANDO; `goto` → EN_RUTA (nuevo destino) |
 | REGRESANDO | Vuelve a (0,0) | Llega → ESPERANDO_CARGA; obstáculo → OBSTACULO |
 | ERROR / PARO | Falla o emergencia | `reset` → LISTO (si sigue calibrado) o ESPERANDO_CARGA |
 

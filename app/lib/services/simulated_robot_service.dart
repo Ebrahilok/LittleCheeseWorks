@@ -87,9 +87,13 @@ class SimulatedRobotService implements RobotService {
           ));
         }
       case 'goto':
-        if (_status.state == RobotState.listo && c.x != null && c.y != null) {
+        // Si el robot está calibrado y sin falla se le puede (re)dirigir en
+        // cualquier momento, con o sin carga, sin tener que parar el robot.
+        final canRedirect = _status.calibrated && !_status.state.isFault;
+        if (canRedirect && c.x != null && c.y != null) {
           final t = room.clamp(Offset(c.x!, c.y!));
-          _setState(_status.copyWith(state: RobotState.enRuta, target: t));
+          _setState(_status.copyWith(
+              state: RobotState.enRuta, target: t, obstacle: false));
         }
       case 'unload':
         if (_status.state == RobotState.entregando) _beginReturn();
@@ -205,7 +209,10 @@ class SimulatedRobotService implements RobotService {
 
   void _arrive() {
     if (_status.state == RobotState.enRuta) {
-      _setState(_status.copyWith(state: RobotState.entregando));
+      // Sin carga no hay nada que entregar: queda listo en ese punto.
+      _setState(_status.copyWith(
+          state: _status.hasLoad ? RobotState.entregando : RobotState.listo,
+          clearTarget: !_status.hasLoad));
     } else {
       _setState(_status.copyWith(
         state: RobotState.esperandoCarga,
