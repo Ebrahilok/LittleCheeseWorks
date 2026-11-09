@@ -50,10 +50,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final s = ref.watch(robotProvider);
     final ctrl = ref.read(robotProvider.notifier);
     final room = s.room;
-    final canSend = s.connected &&
-        s.status.state == RobotState.listo &&
-        s.status.hasLoad &&
-        _selected != null;
+    // Se puede enviar en cualquier momento si el robot está calibrado y sin falla.
+    final robotReady =
+        s.connected && s.status.calibrated && !s.status.state.isFault;
+    final canSend = robotReady && _selected != null;
 
     return Column(
       children: [
@@ -138,11 +138,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     child: Text(
                       !s.connected
                           ? 'Conéctate al robot (pestaña Preparar).'
-                          : s.status.state == RobotState.esperandoCarga
-                              ? 'Primero coloca la carga en la base y calibra (pestaña Preparar).'
-                              : s.status.state != RobotState.listo
-                                  ? 'El robot está ocupado: ${s.status.state.label}.'
-                                  : '',
+                          : !s.status.calibrated
+                              ? 'Primero calibra el robot en la base (pestaña Preparar).'
+                              : s.status.state.isFault
+                                  ? 'El robot está en ${s.status.state.label}: pulsa Reiniciar en la pestaña Estado.'
+                                  : 'Toca el mapa para elegir un destino.',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
@@ -217,24 +217,20 @@ class _MapPainter extends CustomPainter {
     }
 
     // Destino y trayectoria.
-    final t = status.target ?? selected;
-    if (status.target != null) {
+    final active = status.target;
+    if (active != null) {
       canvas.drawLine(
           c(status.x, status.y),
-          c(status.target!.dx, status.target!.dy),
+          c(active.dx, active.dy),
           Paint()
             ..color = const Color(0xFF1E88E5)
             ..strokeWidth = 2);
+      _marker(canvas, c(active.dx, active.dy), const Color(0xFFC62828));
     }
-    if (t != null) {
-      final p = c(t.dx, t.dy);
-      final m = Paint()
-        ..color = const Color(0xFFC62828)
-        ..strokeWidth = 3
-        ..style = PaintingStyle.stroke;
-      canvas.drawCircle(p, 9, m);
-      canvas.drawLine(p - const Offset(13, 0), p + const Offset(13, 0), m);
-      canvas.drawLine(p - const Offset(0, 13), p + const Offset(0, 13), m);
+    // Punto recién elegido (aún no enviado, o distinto del destino activo).
+    if (selected != null && (active == null || (selected! - active).distance > 0.01)) {
+      _marker(canvas, c(selected!.dx, selected!.dy), const Color(0xFFFB8C00),
+          radius: 11);
     }
 
     // Robot: punto con flecha de orientación.
@@ -249,6 +245,16 @@ class _MapPainter extends CustomPainter {
     if (status.hasLoad) {
       canvas.drawCircle(rp, 4, Paint()..color = const Color(0xFFFFA000));
     }
+  }
+
+  void _marker(Canvas canvas, Offset p, Color color, {double radius = 9}) {
+    final m = Paint()
+      ..color = color
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+    canvas.drawCircle(p, radius, m);
+    canvas.drawLine(p - Offset(radius + 4, 0), p + Offset(radius + 4, 0), m);
+    canvas.drawLine(p - Offset(0, radius + 4), p + Offset(0, radius + 4), m);
   }
 
   void _label(Canvas canvas, String text, Offset at) {

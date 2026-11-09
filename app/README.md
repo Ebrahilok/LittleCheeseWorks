@@ -16,7 +16,7 @@ En simulación, **mantén pulsado** el mapa para colocar un objeto; el robot lo 
 ## Flujo
 1. Robot en la base con la carga encima → **Calibrar**: ese punto es el origen (0, 0).
 2. Elegir destino en el mapa (o un punto guardado) → **Llevar aquí**.
-3. En el destino espera el retiro de la carga → **Ya retiré la carga** (o 60 s) → regresa a la base.
+3. En el destino espera el retiro de la carga → **Ya retiré la carga** (o 60 s) → regresa a la base. Mientras el robot esté calibrado y sin falla (también en el destino, regresando o ya en la base) puedes elegir otro punto y pulsar **Llevar aquí** sin parar el robot; sin carga solo va al punto y queda en *Listo*.
 
 ## Robot real
 El ESP32 debe exponer un servidor WebSocket en el puerto 81 (`ws://<ip>:81`) y enviar su estado al menos cada 1–2 s

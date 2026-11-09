@@ -102,6 +102,66 @@ void main() {
       });
     });
 
+    test('tras llegar se puede enviar a otro punto sin parar el robot', () {
+      fakeAsync((a) {
+        final r = make();
+        start(r, 2, 0);
+        a.elapse(const Duration(seconds: 3));
+        expect(r.current.state, RobotState.entregando);
+        r.send(RobotCommand.goTo(2, 2));
+        expect(r.current.state, RobotState.enRuta);
+        expect(r.current.hasLoad, isTrue);
+        a.elapse(const Duration(seconds: 4));
+        expect(r.current.state, RobotState.entregando);
+        expect((r.current.position - const Offset(2, 2)).distance, lessThan(0.1));
+        r.dispose();
+      });
+    });
+
+    test('después de regresar a la base se puede enviar sin recalibrar', () {
+      fakeAsync((a) {
+        final r = make();
+        start(r, 1, 0);
+        a.elapse(const Duration(seconds: 2));
+        r.send(RobotCommand.unload);
+        a.elapse(const Duration(seconds: 3));
+        expect(r.current.state, RobotState.esperandoCarga);
+        r.send(RobotCommand.goTo(0, 2));
+        expect(r.current.state, RobotState.enRuta);
+        a.elapse(const Duration(seconds: 4));
+        expect(r.current.state, RobotState.listo); // sin carga: no espera retiro
+        expect((r.current.position - const Offset(0, 2)).distance, lessThan(0.1));
+        r.dispose();
+      });
+    });
+
+    test('también se puede redirigir mientras regresa', () {
+      fakeAsync((a) {
+        final r = make();
+        start(r, 2, 0);
+        a.elapse(const Duration(seconds: 3));
+        r.send(RobotCommand.unload);
+        a.elapse(const Duration(seconds: 1));
+        expect(r.current.state, RobotState.regresando);
+        r.send(RobotCommand.goTo(2, 2));
+        expect(r.current.state, RobotState.enRuta);
+        r.dispose();
+      });
+    });
+
+    test('se puede cambiar el destino en pleno recorrido', () {
+      fakeAsync((a) {
+        final r = make();
+        start(r, 4, 0);
+        a.elapse(const Duration(seconds: 1));
+        r.send(RobotCommand.goTo(1, 3));
+        expect(r.current.target, const Offset(1, 3));
+        a.elapse(const Duration(seconds: 6));
+        expect(r.current.state, RobotState.entregando);
+        r.dispose();
+      });
+    });
+
     test('sin retiro de carga regresa tras el timeout', () {
       fakeAsync((a) {
         final r = make();
