@@ -4,6 +4,7 @@ import '../models/robot_state.dart';
 abstract class RobotService {
   Stream<RobotStatus> get statusStream;
   Stream<RobotEvent> get eventStream;
+  Stream<ObjectEvent> get objectStream;
   Stream<bool> get connectedStream;
 
   Future<void> connect();

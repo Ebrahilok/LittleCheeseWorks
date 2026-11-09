@@ -6,120 +6,197 @@ import 'package:robot_mesero/services/simulated_robot_service.dart';
 void main() {
   group('Protocolo JSON', () {
     test('serializa comandos', () {
-      expect(RobotCommand.go(3).encode(), '{"cmd":"go","table":3}');
-      expect(RobotCommand.confirm.encode(), '{"cmd":"confirm"}');
+      expect(RobotCommand.calibrate.encode(), '{"cmd":"calibrate"}');
+      expect(RobotCommand.goTo(2.5, 1).encode(), '{"cmd":"goto","x":2.5,"y":1.0}');
+      expect(RobotCommand.unload.encode(), '{"cmd":"unload"}');
       expect(RobotCommand.stop.encode(), '{"cmd":"stop"}');
     });
 
     test('parsea estado', () {
-      final m = RobotMessage.tryParse(
-          '{"state":"EN_RUTA","table":3,"battery":78,"obstacle":false}');
-      expect(m!.status!.state, RobotState.enRuta);
-      expect(m.status!.table, 3);
-      expect(m.status!.battery, 78);
+      final m = RobotMessage.tryParse('{"state":"EN_RUTA","x":1.5,"y":0.5,'
+          '"heading":0.3,"load":true,"calibrated":true,'
+          '"target":{"x":3,"y":2},"battery":78,"obstacle":false}');
+      final s = m!.status!;
+      expect(s.state, RobotState.enRuta);
+      expect(s.x, 1.5);
+      expect(s.hasLoad, isTrue);
+      expect(s.target!.dx, 3);
+      expect(s.battery, 78);
+    });
+
+    test('parsea objeto detectado y objeto desaparecido', () {
+      final seen = RobotMessage.tryParse(
+          '{"event":"object","id":3,"x":1.2,"y":0.8,"w":0.3,"h":0.4}');
+      expect(seen!.object!.object!.id, 3);
+      expect(seen.object!.object!.h, 0.4);
+      final gone = RobotMessage.tryParse('{"event":"object_gone","id":3}');
+      expect(gone!.object!.removed, isTrue);
+      expect(gone.object!.objectId, 3);
     });
 
     test('parsea evento de error', () {
-      final m = RobotMessage.tryParse('{"event":"error","code":"LINE_LOST"}');
-      expect(m!.event!.code, RobotEvent.lineLost);
+      final m = RobotMessage.tryParse('{"event":"error","code":"LOW_BATTERY"}');
+      expect(m!.event!.code, RobotEvent.lowBattery);
     });
 
     test('ignora basura', () {
       expect(RobotMessage.tryParse('no es json'), isNull);
       expect(RobotMessage.tryParse('[1,2]'), isNull);
       expect(RobotMessage.tryParse('{"x":1}'), isNull);
+      expect(RobotMessage.tryParse('{"event":"object","id":"a"}'), isNull);
     });
   });
 
-  group('Robot simulado (§4.2)', () {
+  group('Robot simulado', () {
     SimulatedRobotService make() => SimulatedRobotService(
-          travelTime: const Duration(seconds: 2),
-          waitTimeout: const Duration(seconds: 5),
+          speed: 1.0,
+          turnRate: 10,
+          unloadTimeout: const Duration(seconds: 5),
           obstacleTimeout: const Duration(seconds: 3),
         );
 
-    test('ciclo completo: ruta, espera, confirmación, regreso, reposo', () {
-      fakeAsync((async) {
+    void start(SimulatedRobotService r, double x, double y) {
+      r.connect();
+      r.send(RobotCommand.calibrate);
+      r.send(RobotCommand.goTo(x, y));
+    }
+
+    test('arranca esperando carga y sin calibrar', () {
+      fakeAsync((a) {
+        final r = make()..connect();
+        expect(r.current.state, RobotState.esperandoCarga);
+        expect(r.current.calibrated, isFalse);
+        r.send(RobotCommand.goTo(1, 1)); // ignorado sin calibrar
+        expect(r.current.state, RobotState.esperandoCarga);
+        r.dispose();
+      });
+    });
+
+    test('calibrar fija el origen y toma la carga', () {
+      fakeAsync((a) {
+        final r = make()..connect();
+        r.send(RobotCommand.calibrate);
+        expect(r.current.state, RobotState.listo);
+        expect(r.current.calibrated, isTrue);
+        expect(r.current.hasLoad, isTrue);
+        expect(r.current.position, Offset.zero);
+        r.dispose();
+      });
+    });
+
+    test('lleva la carga al punto, espera retiro y regresa a la base', () {
+      fakeAsync((a) {
         final r = make();
-        r.connect();
-        r.send(RobotCommand.go(3));
+        start(r, 2, 1);
         expect(r.current.state, RobotState.enRuta);
-        expect(r.current.table, 3);
-        async.elapse(const Duration(seconds: 2));
-        expect(r.current.state, RobotState.esperando);
-        r.send(RobotCommand.confirm);
+        a.elapse(const Duration(seconds: 4));
+        expect(r.current.state, RobotState.entregando);
+        expect((r.current.position - const Offset(2, 1)).distance, lessThan(0.1));
+        r.send(RobotCommand.unload);
         expect(r.current.state, RobotState.regresando);
-        async.elapse(const Duration(seconds: 2));
-        expect(r.current.state, RobotState.reposo);
-        expect(r.current.table, isNull);
+        expect(r.current.hasLoad, isFalse);
+        a.elapse(const Duration(seconds: 4));
+        expect(r.current.state, RobotState.esperandoCarga);
+        expect(r.current.position, Offset.zero);
         r.dispose();
       });
     });
 
-    test('timeout de espera regresa a la base (RF-06)', () {
-      fakeAsync((async) {
+    test('sin retiro de carga regresa tras el timeout', () {
+      fakeAsync((a) {
         final r = make();
-        r.connect();
-        r.send(RobotCommand.go(1));
-        async.elapse(const Duration(seconds: 2));
-        async.elapse(const Duration(seconds: 5));
+        start(r, 1, 0);
+        a.elapse(const Duration(seconds: 2));
+        expect(r.current.state, RobotState.entregando);
+        a.elapse(const Duration(seconds: 5));
         expect(r.current.state, RobotState.regresando);
         r.dispose();
       });
     });
 
-    test('obstáculo detiene y reanuda en el estado previo (RF-02/03)', () {
-      fakeAsync((async) {
+    test('un objeto en la trayectoria detiene el robot y al quitarlo reanuda', () {
+      fakeAsync((a) {
         final r = make();
-        r.connect();
-        r.send(RobotCommand.go(2));
-        r.placeObstacle();
+        final id = r.placeObject(1.5, 0);
+        start(r, 4, 0);
+        a.elapse(const Duration(seconds: 3));
         expect(r.current.state, RobotState.obstaculo);
-        r.clearObstacle();
+        expect(r.current.obstacle, isTrue);
+        expect(r.current.x, lessThan(1.5)); // no lo atraviesa
+        r.removeObject(id);
+        a.elapse(const Duration(seconds: 1));
         expect(r.current.state, RobotState.enRuta);
-        expect(r.current.table, 2);
+        a.elapse(const Duration(seconds: 5));
+        expect(r.current.state, RobotState.entregando);
+        r.dispose();
+      });
+    });
+
+    test('un objeto fuera de la trayectoria no bloquea', () {
+      fakeAsync((a) {
+        final r = make();
+        r.placeObject(2, 1.5);
+        start(r, 4, 0);
+        a.elapse(const Duration(seconds: 6));
+        expect(r.current.state, RobotState.entregando);
         r.dispose();
       });
     });
 
     test('obstáculo prolongado genera error y alerta', () {
-      fakeAsync((async) {
+      fakeAsync((a) {
         final r = make();
         final events = <RobotEvent>[];
         r.eventStream.listen(events.add);
-        r.connect();
-        r.send(RobotCommand.go(2));
-        r.placeObstacle();
-        async.elapse(const Duration(seconds: 3));
-        async.flushMicrotasks();
+        r.placeObject(1.5, 0);
+        start(r, 4, 0);
+        a.elapse(const Duration(seconds: 7));
         expect(r.current.state, RobotState.error);
-        expect(events.single.code, RobotEvent.obstacleTimeout);
+        expect(events.map((e) => e.code), contains(RobotEvent.obstacleTimeout));
         r.dispose();
       });
     });
 
-    test('paro de emergencia y reinicio manual (RF-08)', () {
-      fakeAsync((async) {
+    test('detecta objetos dentro del rango del sensor y su desaparición', () {
+      fakeAsync((a) {
         final r = make();
+        final seen = <ObjectEvent>[];
+        r.objectStream.listen(seen.add);
         r.connect();
-        r.send(RobotCommand.go(2));
+        final near = r.placeObject(0.6, 0.6);
+        r.placeObject(5, 3); // lejos: no se detecta
+        a.elapse(const Duration(seconds: 1));
+        expect(seen.length, 1);
+        expect(seen.single.object!.x, 0.6);
+        r.removeObject(near);
+        a.elapse(const Duration(seconds: 1));
+        expect(seen.last.removed, isTrue);
+        expect(seen.last.objectId, near);
+        r.dispose();
+      });
+    });
+
+    test('paro de emergencia y reinicio', () {
+      fakeAsync((a) {
+        final r = make();
+        start(r, 3, 0);
+        a.elapse(const Duration(seconds: 1));
         r.send(RobotCommand.stop);
+        final x = r.current.x;
+        a.elapse(const Duration(seconds: 5));
         expect(r.current.state, RobotState.paro);
-        async.elapse(const Duration(seconds: 10));
-        expect(r.current.state, RobotState.paro);
+        expect(r.current.x, x);
         r.send(RobotCommand.reset);
-        expect(r.current.state, RobotState.reposo);
+        expect(r.current.state, RobotState.listo);
         r.dispose();
       });
     });
 
-    test('ignora "go" si no está en reposo', () {
-      fakeAsync((async) {
+    test('el destino se limita al cuarto', () {
+      fakeAsync((a) {
         final r = make();
-        r.connect();
-        r.send(RobotCommand.go(1));
-        r.send(RobotCommand.go(4));
-        expect(r.current.table, 1);
+        start(r, 100, 100);
+        expect(r.current.target, const Offset(5.5, 3.5));
         r.dispose();
       });
     });

@@ -1,158 +1,274 @@
 import 'dart:async';
+import 'dart:math';
+import 'dart:ui';
 
 import '../models/robot_state.dart';
+import '../models/world.dart';
 import 'robot_service.dart';
 
-/// Robot simulado: reproduce la máquina de estados de la especificación §4.2.
-/// Los tiempos son configurables para poder probarlo rápido.
+/// Robot simulado: cinemática simple (gira hacia el destino y avanza en línea
+/// recta), detección de objetos por radio de sensor y parada ante obstáculos.
 class SimulatedRobotService implements RobotService {
   SimulatedRobotService({
-    this.travelTime = const Duration(seconds: 8),
-    this.waitTimeout = const Duration(seconds: 60),
+    this.tick = const Duration(milliseconds: 100),
+    this.speed = 0.5,
+    this.turnRate = 2.5,
+    this.sensorRange = 1.2,
+    this.stopDistance = 0.5,
+    this.unloadTimeout = const Duration(seconds: 60),
     this.obstacleTimeout = const Duration(seconds: 30),
-    this.tick = const Duration(seconds: 1),
+    this.room = Room.standard,
   });
 
-  final Duration travelTime;
-  final Duration waitTimeout;
-  final Duration obstacleTimeout;
   final Duration tick;
 
-  final _status = StreamController<RobotStatus>.broadcast();
-  final _events = StreamController<RobotEvent>.broadcast();
-  final _connected = StreamController<bool>.broadcast();
+  /// m/s
+  final double speed;
 
-  RobotStatus _current = const RobotStatus();
-  RobotState? _stateBeforeObstacle;
-  Timer? _ticker;
-  Timer? _phaseTimer;
-  Timer? _obstacleTimer;
-  int _ticks = 0;
+  /// rad/s
+  final double turnRate;
+  final double sensorRange;
+  final double stopDistance;
+  final Duration unloadTimeout;
+  final Duration obstacleTimeout;
+  final Room room;
+
+  static const _arrivalRadius = 0.05;
+  static const _robotHalfWidth = 0.2;
+
+  final _statusCtl = StreamController<RobotStatus>.broadcast();
+  final _eventCtl = StreamController<RobotEvent>.broadcast();
+  final _objectCtl = StreamController<ObjectEvent>.broadcast();
+  final _connectedCtl = StreamController<bool>.broadcast();
+
+  RobotStatus _status = const RobotStatus();
+  final Map<int, DetectedObject> _world = {};
+  final Set<int> _known = {};
+  int _nextId = 1;
+  RobotState _stateBeforeObstacle = RobotState.enRuta;
+  Duration _stateTime = Duration.zero;
+  double _battery = 100;
   bool _lowBatteryNotified = false;
+  Timer? _ticker;
 
   @override
-  Stream<RobotStatus> get statusStream => _status.stream;
+  Stream<RobotStatus> get statusStream => _statusCtl.stream;
   @override
-  Stream<RobotEvent> get eventStream => _events.stream;
+  Stream<RobotEvent> get eventStream => _eventCtl.stream;
   @override
-  Stream<bool> get connectedStream => _connected.stream;
+  Stream<ObjectEvent> get objectStream => _objectCtl.stream;
+  @override
+  Stream<bool> get connectedStream => _connectedCtl.stream;
 
-  RobotStatus get current => _current;
+  RobotStatus get current => _status;
+  List<DetectedObject> get worldObjects => _world.values.toList();
 
   @override
   Future<void> connect() async {
-    _connected.add(true);
-    _emit(_current);
+    _connectedCtl.add(true);
+    _emit(_status);
     _ticker = Timer.periodic(tick, (_) => _onTick());
   }
 
   @override
-  void send(RobotCommand command) {
-    switch (command.cmd) {
-      case 'go':
-        if (_current.state == RobotState.reposo && command.table != null) {
-          _startPhase(RobotState.enRuta, table: command.table);
+  void send(RobotCommand c) {
+    switch (c.cmd) {
+      case 'calibrate':
+        // El objeto está en la base: ese punto es el origen.
+        if (_status.state == RobotState.esperandoCarga) {
+          _setState(_status.copyWith(
+            state: RobotState.listo,
+            x: 0,
+            y: 0,
+            heading: 0,
+            hasLoad: true,
+            calibrated: true,
+            clearTarget: true,
+          ));
         }
-      case 'confirm':
-        if (_current.state == RobotState.esperando) {
-          _startPhase(RobotState.regresando);
+      case 'goto':
+        if (_status.state == RobotState.listo && c.x != null && c.y != null) {
+          final t = room.clamp(Offset(c.x!, c.y!));
+          _setState(_status.copyWith(state: RobotState.enRuta, target: t));
         }
+      case 'unload':
+        if (_status.state == RobotState.entregando) _beginReturn();
       case 'stop':
-        _cancelTimers();
-        _emit(_current.copyWith(state: RobotState.paro, obstacle: false));
+        _setState(_status.copyWith(state: RobotState.paro, obstacle: false));
       case 'reset':
-        if (_current.state.isFault) {
-          _cancelTimers();
-          _emit(_current.copyWith(
-              state: RobotState.reposo, clearTable: true, obstacle: false));
+        if (_status.state.isFault) {
+          _setState(_status.copyWith(
+            state: _status.calibrated ? RobotState.listo : RobotState.esperandoCarga,
+            clearTarget: true,
+            obstacle: false,
+          ));
         }
     }
   }
 
-  /// Simula un objeto frente al robot (RF-02).
-  void placeObstacle() {
-    final s = _current.state;
-    if (s != RobotState.enRuta && s != RobotState.regresando) return;
-    _phaseTimer?.cancel();
-    _stateBeforeObstacle = s;
-    _emit(_current.copyWith(state: RobotState.obstaculo, obstacle: true));
-    _obstacleTimer = Timer(obstacleTimeout, () {
-      _events.add(const RobotEvent(RobotEvent.obstacleTimeout));
-      _emit(_current.copyWith(state: RobotState.error, obstacle: false));
-    });
+  // ---- Controles de simulación -------------------------------------------
+
+  /// Coloca un objeto en el cuarto. Devuelve su id.
+  int placeObject(double x, double y, {double size = 0.3}) {
+    final id = _nextId++;
+    _world[id] = DetectedObject(id: id, x: x, y: y, w: size, h: size);
+    return id;
   }
 
-  /// Retira el objeto: el robot reanuda la marcha (RF-03).
-  void clearObstacle() {
-    if (_current.state != RobotState.obstaculo) return;
-    _obstacleTimer?.cancel();
-    _startPhase(_stateBeforeObstacle ?? RobotState.enRuta, keepTable: true);
+  void removeObject(int id) => _world.remove(id);
+
+  void removeLastObject() {
+    if (_world.isEmpty) return;
+    _world.remove(_world.keys.reduce(max));
   }
 
-  /// Simula pérdida de línea (RF-09).
-  void loseLine() {
-    final s = _current.state;
-    if (s != RobotState.enRuta && s != RobotState.regresando) return;
-    _cancelTimers();
-    _events.add(const RobotEvent(RobotEvent.lineLost));
-    _emit(_current.copyWith(state: RobotState.error));
+  /// Simula que el robot pierde su ubicación.
+  void loseLocalization() {
+    if (!_status.state.isMoving) return;
+    _eventCtl.add(const RobotEvent(RobotEvent.localizationLost));
+    _setState(_status.copyWith(state: RobotState.error, calibrated: false));
   }
 
-  void _startPhase(RobotState state, {int? table, bool keepTable = false}) {
-    _phaseTimer?.cancel();
-    final duration = state == RobotState.esperando ? waitTimeout : travelTime;
-    _emit(_current.copyWith(
-      state: state,
-      table: table,
-      clearTable: !keepTable && table == null && state == RobotState.reposo,
-      obstacle: false,
-    ));
-    _phaseTimer = Timer(duration, () => _phaseDone(state));
-  }
+  // ---- Lógica -------------------------------------------------------------
 
-  void _phaseDone(RobotState state) {
-    switch (state) {
-      case RobotState.enRuta:
-        _startPhase(RobotState.esperando, keepTable: true);
-      case RobotState.esperando:
-        _startPhase(RobotState.regresando, keepTable: true);
-      case RobotState.regresando:
-        _emit(_current.copyWith(
-            state: RobotState.reposo, clearTable: true, obstacle: false));
-      default:
-        break;
-    }
+  void _beginReturn() => _setState(_status.copyWith(
+        state: RobotState.regresando,
+        hasLoad: false,
+        target: Offset.zero,
+      ));
+
+  void _setState(RobotStatus s) {
+    if (s.state != _status.state) _stateTime = Duration.zero;
+    _emit(s);
   }
 
   void _onTick() {
-    _ticks++;
-    var battery = _current.battery;
-    final moving = _current.state == RobotState.enRuta ||
-        _current.state == RobotState.regresando;
-    if (moving && _ticks % 5 == 0 && battery > 0) battery--;
-    if (battery <= 20 && !_lowBatteryNotified) {
-      _lowBatteryNotified = true;
-      _events.add(const RobotEvent(RobotEvent.lowBattery));
+    final dt = tick.inMicroseconds / 1e6;
+    _stateTime += tick;
+    switch (_status.state) {
+      case RobotState.enRuta:
+      case RobotState.regresando:
+        _drive(dt);
+      case RobotState.obstaculo:
+        if (!_pathBlocked()) {
+          _setState(_status.copyWith(state: _stateBeforeObstacle, obstacle: false));
+        } else if (_stateTime >= obstacleTimeout) {
+          _eventCtl.add(const RobotEvent(RobotEvent.obstacleTimeout));
+          _setState(_status.copyWith(state: RobotState.error, obstacle: false));
+        }
+      case RobotState.entregando:
+        if (_stateTime >= unloadTimeout) _beginReturn();
+      default:
+        break;
     }
-    _emit(_current.copyWith(battery: battery));
+    _sense();
+    if (_battery <= 20 && !_lowBatteryNotified) {
+      _lowBatteryNotified = true;
+      _eventCtl.add(const RobotEvent(RobotEvent.lowBattery));
+    }
+    _emit(_status);
   }
 
-  void _cancelTimers() {
-    _phaseTimer?.cancel();
-    _obstacleTimer?.cancel();
+  void _drive(double dt) {
+    final target = _status.target;
+    if (target == null) return;
+    final dx = target.dx - _status.x;
+    final dy = target.dy - _status.y;
+    final dist = sqrt(dx * dx + dy * dy);
+    if (dist <= _arrivalRadius) {
+      _arrive();
+      return;
+    }
+    // Girar hacia el destino.
+    final desired = atan2(dy, dx);
+    final err = _wrap(desired - _status.heading);
+    final turn = err.clamp(-turnRate * dt, turnRate * dt);
+    final heading = _status.heading + turn;
+    if (err.abs() > 0.2) {
+      _emit(_status.copyWith(heading: heading));
+      return;
+    }
+    if (_pathBlocked()) {
+      _stateBeforeObstacle = _status.state;
+      _setState(_status.copyWith(state: RobotState.obstaculo, obstacle: true));
+      return;
+    }
+    final step = min(speed * dt, dist);
+    _battery = max(0, _battery - step * 0.5);
+    _emit(_status.copyWith(
+      heading: heading,
+      x: _status.x + cos(heading) * step,
+      y: _status.y + sin(heading) * step,
+      battery: _battery.round(),
+    ));
+  }
+
+  void _arrive() {
+    if (_status.state == RobotState.enRuta) {
+      _setState(_status.copyWith(state: RobotState.entregando));
+    } else {
+      _setState(_status.copyWith(
+        state: RobotState.esperandoCarga,
+        x: 0,
+        y: 0,
+        hasLoad: false,
+        clearTarget: true,
+      ));
+    }
+  }
+
+  bool _pathBlocked() {
+    final hx = cos(_status.heading), hy = sin(_status.heading);
+    for (final o in _world.values) {
+      final dx = o.x - _status.x, dy = o.y - _status.y;
+      final forward = dx * hx + dy * hy;
+      final lateral = (dx * hy - dy * hx).abs();
+      if (forward > 0 &&
+          forward - o.radius < stopDistance &&
+          lateral < o.radius + _robotHalfWidth) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void _sense() {
+    for (final o in _world.values) {
+      if (_known.contains(o.id)) continue;
+      if ((o.position - _status.position).distance <= sensorRange) {
+        _known.add(o.id);
+        _objectCtl.add(ObjectEvent.seen(o));
+      }
+    }
+    for (final id in _known.toList()) {
+      if (!_world.containsKey(id)) {
+        _known.remove(id);
+        _objectCtl.add(ObjectEvent.gone(id));
+      }
+    }
+  }
+
+  static double _wrap(double a) {
+    while (a > pi) {
+      a -= 2 * pi;
+    }
+    while (a < -pi) {
+      a += 2 * pi;
+    }
+    return a;
   }
 
   void _emit(RobotStatus s) {
-    _current = s;
-    if (!_status.isClosed) _status.add(s);
+    _status = s;
+    if (!_statusCtl.isClosed) _statusCtl.add(s);
   }
 
   @override
   Future<void> dispose() async {
     _ticker?.cancel();
-    _cancelTimers();
-    await _status.close();
-    await _events.close();
-    await _connected.close();
+    await _statusCtl.close();
+    await _eventCtl.close();
+    await _objectCtl.close();
+    await _connectedCtl.close();
   }
 }

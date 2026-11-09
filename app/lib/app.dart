@@ -4,15 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers/robot_provider.dart';
 import 'screens/alerts_screen.dart';
 import 'screens/connection_screen.dart';
-import 'screens/order_screen.dart';
+import 'screens/map_screen.dart';
+import 'screens/view3d_screen.dart';
 import 'screens/status_screen.dart';
 
-class RobotMeseroApp extends StatelessWidget {
-  const RobotMeseroApp({super.key});
+class RobotCargaApp extends StatelessWidget {
+  const RobotCargaApp({super.key});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'Robot Mesero',
+        title: 'Robot de Carga',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorSchemeSeed: Colors.deepOrange,
@@ -37,13 +38,14 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     final session = ref.watch(robotProvider);
     final pages = const [
       ConnectionScreen(),
-      OrderScreen(),
+      MapScreen(),
+      View3DScreen(),
       StatusScreen(),
       AlertsScreen(),
     ];
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Robot Mesero'),
+        title: const Text('Robot de Carga'),
         actions: [
           if (session.connected)
             Padding(
@@ -66,13 +68,14 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         selectedIndex: _index,
         onDestinationSelected: (i) {
           setState(() => _index = i);
-          if (i == 3) ref.read(robotProvider.notifier).markAlertsRead();
+          if (i == 4) ref.read(robotProvider.notifier).markAlertsRead();
         },
         destinations: [
           const NavigationDestination(
-              icon: Icon(Icons.wifi), label: 'Conexión'),
+              icon: Icon(Icons.wifi), label: 'Preparar'),
+          const NavigationDestination(icon: Icon(Icons.map), label: 'Mapa'),
           const NavigationDestination(
-              icon: Icon(Icons.table_restaurant), label: 'Pedido'),
+              icon: Icon(Icons.view_in_ar), label: '3D'),
           const NavigationDestination(
               icon: Icon(Icons.smart_toy), label: 'Estado'),
           NavigationDestination(
