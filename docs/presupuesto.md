@@ -4,18 +4,35 @@
 
 ## Resumen
 
-| | Plan A: el más barato | Plan B: todo nacional |
+Hay tres opciones. La **Opción 1 (robot mini para 2 × 2 m)** es la recomendada para la clase; las otras dos son el robot grande completo.
+
+| | **Opción 1: robot mini 2 × 2 m** | Opción 2 (Plan A): robot grande, el más barato | Opción 3 (Plan B): robot grande, todo nacional |
+|---|---|---|---|
+| Cuarto | 2 × 2 m | 6 × 4 m | 6 × 4 m |
+| Dónde se compra | Todo en UNIT Electronics | UNIT + kit de AliExpress + compra local | UNIT + Mercado Libre + compra local |
+| Tiempo de entrega | Días | 2 a 4 semanas lo de AliExpress | Días |
+| Subtotal | $782 (piezas $632 + envío $150) | $1,749 | $2,156–2,316 |
+| Imprevistos (10 %) | $78 | $175 | $216–232 |
+| **Total** | **$860** | **$1,924** | **$2,372–2,548** |
+| **Por persona (÷ 4)** | **$215** | **$481** | **$593–637** |
+| Cumple carga 1.5 kg, 2 h y 10 cm | No (ver abajo) | Sí | Sí |
+| Detalle y enlaces | [`robot_mini_2x2.md`](robot_mini_2x2.md) | Más abajo | Más abajo |
+
+El tope del proyecto es de 300 USD (RNF-05). Con un tipo de cambio de entre 17 y 20 pesos por dólar, la Opción 1 equivale a unos 43–51 USD, la Opción 2 a unos 96–113 USD y la Opción 3 a unos 119–150 USD.
+
+### Qué se pierde con el robot mini
+
+El robot mini ahorra unos $1,060 en total (unos $266 por persona) respecto a la Opción 2, pero **no cumple tres requisitos** de [`especificaciones.md`](especificaciones.md):
+
+| Requisito | Robot grande | Robot mini |
 |---|---|---|
-| Tracción (motores, soportes, llantas) | Kit de AliExpress | Motores de UNIT Electronics + piezas de Mercado Libre |
-| Tiempo de entrega | 2 a 4 semanas lo de AliExpress | Días |
-| Subtotal | $1,749 | $2,386 |
-| Imprevistos (10 %) | $175 | $239 |
-| **Total** | **$1,924** | **$2,625** |
-| **Por persona (÷ 4)** | **$481** | **$656** |
+| RNF-01 Carga | 1.5 kg | Unos 200–300 g (no probado) |
+| RNF-03 Autonomía | ≥ 2 h | Una o dos horas con pilas AA |
+| RNF-08 Precisión | ≤ 10 cm | Sin garantía: esperar 5 a 10 cm en 2 m |
 
-El tope del proyecto es de 300 USD (RNF-05). Los dos planes quedan muy por debajo: a un tipo de cambio de entre 17 y 20 pesos por dólar, el Plan A equivale a unos 96–113 USD y el Plan B a unos 131–154 USD.
+Además, el paro físico es el interruptor del portapilas, no un botón de hongo, y hay un solo ultrasónico y ningún IMU. Antes de comprar el mini hay que confirmar dos datos que la ficha de UNIT no da (voltaje de los motores del kit y si tienen eje doble para los discos encoder): están explicados en la sección 3 de `robot_mini_2x2.md`.
 
-**Recomendación:** Plan A si se pide en la semana 1 del cronograma, porque ahorra unos $700 y el motor es de la misma familia (JGA25-370). Si AliExpress no llega a tiempo, se pasa al Plan B comprando solo los renglones de tracción.
+**Recomendación:** si la clase pide demostrar el flujo (calibrar, llevar un objeto ligero a un punto, detenerse ante un obstáculo, regresar), comprar la **Opción 1**. Si exige los requisitos de carga, autonomía y precisión, comprar la **Opción 2** pidiéndola en la semana 1 del cronograma; pasa a la Opción 3 solo si AliExpress no llega a tiempo, comprando únicamente los renglones de tracción.
 
 ### Qué tan confiables son estos precios
 
@@ -26,11 +43,11 @@ El tope del proyecto es de 300 USD (RNF-05). Los dos planes quedan muy por debaj
 | **Mercado Libre y Amazon México** | **No se pudieron consultar** (bloquean la lectura automática) | Los enlaces son búsquedas y los montos son **estimados**: confirmar antes de comprar |
 | Ferretería / papelería local | Estimado | Baja: depende de la ciudad |
 
-El **envío de UNIT** ($150) es un estimado que no se pudo confirmar; el costo real aparece en el carrito.
+El **envío de UNIT** ($150) es un estimado que no se pudo confirmar; el costo real aparece en el carrito (puede ser gratis pasado un mínimo de compra).
 
 ---
 
-## Plan A: lista de compras
+## Opción 2 (Plan A): robot grande, lista de compras
 
 ### 1. UNIT Electronics (precios verificados, en existencia)
 
@@ -103,31 +120,40 @@ Al pedir el kit de tracción (renglón 21):
 
 ---
 
-## Plan B: todo nacional
+## Opción 3 (Plan B): robot grande, todo nacional
 
 Igual que el Plan A, pero se cambian los renglones 21 y 22:
 
 | # | Pieza | Cant. | Subtotal | Dónde |
 |---|---|---|---|---|
 | 21a | Motor GM25-370 12 V **140 RPM** con encoder (verificado, en existencia) | 2 × $213 | $426 | [uelectronics.com](https://uelectronics.com/producto/gm-25-370-motor-con-encoder-12v-dc-140rpm-330rpm/) |
-| 21b | Soporte metálico en L para motor de 25 mm | 2 | $120 *(estimado)* | [Mercado Libre](https://listado.mercadolibre.com.mx/soporte-motor-25mm-ga25) · [AliExpress, $29.50 c/u](https://es.aliexpress.com/item/1005006039521658.html) |
-| 21c | Cople hexagonal de 12 mm para eje de 4 mm | 2 | $100 *(estimado)* | [Mercado Libre](https://listado.mercadolibre.com.mx/cople-hexagonal-12mm-eje-4mm) |
-| 21d | Llanta de 65 mm con hueco hexagonal de 12 mm | 2 | $120 *(estimado)* | [Mercado Libre](https://listado.mercadolibre.com.mx/llanta-65mm-cople-hexagonal-12mm) · [AliExpress, 4 piezas por $112.77](https://es.aliexpress.com/item/1005008364771614.html) |
-| 22 | Botón de paro de emergencia tipo hongo, 22 mm, NC | 1 | $120 *(estimado)* | [Mercado Libre](https://listado.mercadolibre.com.mx/boton-paro-de-emergencia-hongo-22mm) · [Amazon](https://www.amazon.com.mx/s?k=boton+paro+de+emergencia+22mm) |
+| 21b | Soporte metálico en L para motor de 25 mm | 2 | $40–70 *(estimado)* | [Mercado Libre](https://listado.mercadolibre.com.mx/soporte-motor-25mm-ga25) · [AliExpress, $29.50 c/u](https://es.aliexpress.com/item/1005006039521658.html) |
+| 21c | Cople hexagonal de 12 mm para eje de 4 mm | 2 | $40–80 *(estimado)* | [Mercado Libre](https://listado.mercadolibre.com.mx/cople-hexagonal-12mm-eje-4mm) |
+| 21d | Llanta de 65 mm con hueco hexagonal de 12 mm | 2 | $80–140 *(estimado)* | [Mercado Libre](https://listado.mercadolibre.com.mx/llanta-65mm-cople-hexagonal-12mm) · [AliExpress, 4 piezas por $112.77](https://es.aliexpress.com/item/1005008364771614.html) |
+| 22 | Botón de paro de emergencia tipo hongo, 22 mm, NC (XB2-BS542 o similar) | 1 | $70–100 *(estimado)* | [Mercado Libre](https://listado.mercadolibre.com.mx/boton-paro-de-emergencia-hongo-22mm) · [Amazon](https://www.amazon.com.mx/s?k=boton+paro+de+emergencia+22mm) |
 
 | Concepto | Monto |
 |---|---|
 | UNIT Electronics (renglones 1–20) | $1,050 |
 | Motores de UNIT | $426 |
-| Soportes, coples, llantas y paro (estimado) | $460 |
+| Soportes, coples, llantas y paro (estimado) | $230–390 |
 | Compra local (estimado) | $300 |
 | Envío de UNIT (estimado) | $150 |
-| **Subtotal** | **$2,386** |
-| Imprevistos (10 %) | $239 |
-| **Total** | **$2,625** |
-| **Por persona (÷ 4)** | **$656** |
+| **Subtotal** | **$2,156–2,316** |
+| Imprevistos (10 %) | $216–232 |
+| **Total** | **$2,372–2,548** |
+| **Por persona (÷ 4)** | **$593–637** |
 
 El motor de UNIT es el que usa el tutorial de conexión: 45:1, 11 pulsos por vuelta de motor, corriente nominal ≤ 0.8 A y de bloqueo ≤ 2 A, eje "D" de 4 mm. Se elige el de **140 RPM** y no el de 330 RPM ($181): el rápido pide hasta 3 A bloqueado, más de lo que el TB6612FNG entrega de forma continua.
+
+Otras opciones de motor, comparadas (precios de búsquedas públicas, sin confirmar en el carrito):
+
+| Opción | 2 motores | Nota |
+|---|---|---|
+| Kit de AliExpress (motor + soporte + llanta) | ~$238 | El más barato; 2 a 4 semanas |
+| UNIT Electronics, motor 140 RPM | $426 (2 × $213) | Precio verificado; sin soporte, cople ni llanta |
+| Amazon México, mismo motor de UNIT | ~$490 | Más caro que la tienda oficial: evitarlo |
+| Mercado Libre, motores genéricos de 25 mm con encoder | ~$350–450 | Calidad variable: revisar opiniones, eje de 4 mm tipo "D" y encoder Hall |
 
 UNIT no vende soporte ni cople para este motor. Su "Llanta de goma 65 mm con accesorios" trae un buje para motores de eje más grueso (series JGY370 y JGB37) y estaba agotada.
 
@@ -157,7 +183,7 @@ Consumo estimado en marcha: unos 0.6 A en los motores más 0.15 A de electrónic
 
 ---
 
-## Reparto entre los cuatro integrantes
+## Reparto de la Opción 2 (Plan A) entre los cuatro integrantes
 
 Reparto parejo del Plan A: **$481 por persona**. Para no depender de transferencias entre todos, cada quien puede hacerse cargo de un pedido:
 
@@ -170,3 +196,17 @@ Reparto parejo del Plan A: **$481 por persona**. Para no depender de transferenc
 | | **Total** | **$1,924** | |
 
 Conviene hacer **un solo pedido a UNIT** para pagar un envío; la división de arriba solo indica quién pone el dinero. El fondo de imprevistos se devuelve en partes iguales si no se usa.
+
+---
+
+## Reparto de la Opción 1 (robot mini)
+
+Total $860 entre 4: **$215 por persona**. Como todo sale de UNIT, conviene **un solo pedido** (un solo envío):
+
+| Concepto | Monto |
+|---|---|
+| Pedido a UNIT (piezas $632 + envío estimado $150) | $782 |
+| Fondo de imprevistos (10 %) | $78 |
+| **Total que se reúne** | **$860** |
+
+Cada integrante aporta $215. Quien hace el pedido a UNIT paga los $782 y guarda los $78 restantes como fondo de imprevistos (pilas de repuesto, un cable que falle, un capacitor); si no se usan, se devuelven en partes iguales. Si el envío real resulta menor o gratis, también se devuelve la diferencia.
