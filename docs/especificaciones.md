@@ -3,7 +3,9 @@
 
 **Institución:** Universidad Autónoma de Occidente
 **Integrantes:** Ali Avila Ebrahim Alejandro; Molina Garcia Jesus Armando; Estavillo Servin Xavier; Ayala Noriega Rey David
-**Versión:** 0.2 (borrador) — el proyecto pasó de "robot mesero" a "robot de transporte de carga a un punto"
+**Versión:** 0.3 (borrador) — se agregan presupuesto con enlaces de compra, tutorial de conexión y prototipo 3D
+
+**Documentos relacionados:** [Presupuesto y enlaces de compra](presupuesto.md) · [Tutorial de armado y conexión](tutorial_conexion.md) · [Modelo 3D](modelo/robot_prototipo.blend)
 
 ---
 
@@ -94,35 +96,39 @@ Diseñar y construir un robot móvil de bajo costo que transporte objetos desde 
 ### 3.2 Componentes principales
 | Subsistema | Componente sugerido | Función |
 |---|---|---|
-| Controlador | ESP32 DevKit | Lógica, control y WiFi/BLE |
-| Tracción | 2 motores DC con reductora y **encoders** (6–12 V) + rueda loca | Movimiento diferencial y odometría |
-| Driver | TB6612FNG (o L298N) | Control de motores |
+| Controlador | ESP32 DevKit V1 (30 pines) | Lógica, control y WiFi/BLE |
+| Tracción | 2 motorreductores GM25-370 de 12 V y 140 RPM con **encoder** Hall (11 PPR × 45:1) + llantas de 65 mm + rueda loca | Movimiento diferencial y odometría |
+| Driver | TB6612FNG (1.2 A continuos por canal; el motor pide ≤ 0.8 A nominal y ≤ 2 A bloqueado) | Control de motores |
 | Orientación | IMU MPU6050 (giroscopio) | Corregir el rumbo en la odometría |
-| Detección | HC-SR04 frontal + 2 laterales (opcional: sensor ToF) | Detección de objetos y obstáculos |
-| Energía | Batería Li-ion 2S/3S + BMS + convertidor buck | Alimentación |
-| Seguridad | Botón de paro de emergencia (corte de motores) | RF-09 |
-| Estructura | Chasis acrílico/MDF + bandeja antideslizante con sensor de presencia de carga (opcional) | Soporte y carga |
-| Indicadores | LED RGB + buzzer | Estado local |
+| Detección | 3 × HC-SR04P (versión de 3.3 V): frontal + 2 laterales a ~55° | Detección de objetos y obstáculos |
+| Energía | Paquete Li-ion 3S (11.1 V, 2200 mAh) con BMS integrado + convertidor buck LM2596 a 5 V | Alimentación |
+| Seguridad | Botón de paro de emergencia con contacto NC en serie con la alimentación de los motores | RF-09 |
+| Estructura | Dos placas de MDF de 28 × 22 cm sobre separadores M3 de 50 mm + bandeja de 22 × 22 cm con borde y tapete antideslizante | Soporte y carga |
+| Indicadores | LED bicolor rojo-verde + buzzer | Estado local |
+
+Asignación de pines, diagrama de energía y pasos de armado: ver [`tutorial_conexion.md`](tutorial_conexion.md).
+
+### 3.2.1 Prototipo
+![Prototipo del robot](img/robot_prototipo_frente.png)
+
+Modelo 3D en [`modelo/robot_prototipo.blend`](modelo/robot_prototipo.blend); se regenera con `blender -b -P docs/modelo/generar_prototipo.py`. Más vistas en el tutorial.
 
 > **Cambio respecto a v0.1:** el seguidor de línea (array IR) se elimina; para navegar a coordenadas libres se requieren encoders e IMU. **A confirmar con el equipo y el profesor.**
 
-### 3.3 Lista de materiales (BOM) estimada
-| Ítem | Cant. | Costo unit. (USD) | Subtotal |
-|---|---|---|---|
-| ESP32 DevKit | 1 | 10 | 10 |
-| Motores DC con reductora y encoders | 2 | 16 | 32 |
-| Driver TB6612FNG | 1 | 6 | 6 |
-| IMU MPU6050 | 1 | 4 | 4 |
-| HC-SR04 | 3 | 3 | 9 |
-| Baterías Li-ion 18650 + soporte + BMS | 1 kit | 25 | 25 |
-| Convertidor buck | 2 | 4 | 8 |
-| Chasis, ruedas, rueda loca, bandeja | 1 | 40 | 40 |
-| Botón de emergencia, LEDs, buzzer, cableado | 1 kit | 15 | 15 |
-| Objetos y cinta para marcar el cuarto de pruebas | 1 | 20 | 20 |
-| Imprevistos (15 %) | — | — | ~26 |
-| **Total estimado** | | | **~195** |
+### 3.3 Lista de materiales (BOM) y presupuesto
+El detalle pieza por pieza, con enlaces de compra y reparto entre los integrantes, está en [`presupuesto.md`](presupuesto.md). Precios en pesos mexicanos al 11 de noviembre de 2026.
 
-Margen disponible respecto al tope de 300 USD: ~105 USD.
+| Grupo | Plan A (el más barato) | Plan B (todo nacional) |
+|---|---|---|
+| Electrónica, batería y cargador (UNIT Electronics, precios verificados) | $1,050 | $1,050 |
+| Tracción y paro de emergencia | $249 (AliExpress) | $886 (motores UNIT + piezas estimadas) |
+| Chasis, tornillería y cableado (compra local, estimado) | $300 | $300 |
+| Envío (estimado) | $150 | $150 |
+| Imprevistos (10 %) | $175 | $239 |
+| **Total** | **$1,924** | **$2,625** |
+| **Por persona (4 integrantes)** | **$481** | **$656** |
+
+Ambos planes quedan por debajo del tope de 300 USD (RNF-05): entre 96 y 154 USD con un tipo de cambio de 17 a 20 pesos por dólar.
 
 ### 3.4 Consideraciones de diseño
 - Centro de gravedad bajo; bandeja con borde y superficie antideslizante.
@@ -182,6 +188,9 @@ Coordenadas en metros respecto a la base; +x a la derecha y +y hacia abajo en la
 ### 4.4 Aplicación móvil (Flutter)
 Pestañas: (1) **Preparar**: conexión (IP del ESP32 o modo simulación) y calibración en la base; (2) **Mapa**: plano 2D del cuarto, robot, objetos detectados, destino y puntos guardados; (3) **3D**: visor orbitable del cuarto, robot, carga y objetos; (4) **Estado**: estado, posición, batería, retiro de carga; (5) **Alertas**: historial. Botón de **PARO** siempre visible.
 Capas: UI → estado (Riverpod) → servicio de comunicación (`RobotService`).
+Las medidas del cuarto y la posición de la base se definen en la pestaña Preparar; la app guarda el cuarto, los puntos y la IP del robot entre sesiones.
+Si se pierde la conexión con el robot real, la app lo indica y reintenta sola hasta recuperarla.
+El mapa dibuja el recorrido hecho por el robot desde que salió de la base.
 El visor 3D es un renderizador propio en Dart (cámara orbital con perspectiva), sin dependencias nativas.
 
 ### 4.5 Firmware
@@ -244,7 +253,7 @@ Tasa de entrega correcta ≥ 90 %, cero colisiones en 20 recorridos, latencia de
 | WiFi inestable | Media | Alto | Punto de acceso propio, fallback BLE |
 | Detección poco fiable (ultrasonido) | Media | Medio | Filtro de mediana, sensores laterales, ToF |
 | Retraso en compras | Media | Medio | Pedir en semana 1, proveedores locales |
-| Presupuesto excedido | Baja | Medio | Margen de 100 USD, componentes genéricos |
+| Presupuesto excedido | Baja | Medio | Margen amplio respecto al tope (ver presupuesto.md), componentes genéricos |
 | Inexperiencia con Flutter | Media | Medio | Prototipo con simulador desde temprano |
 
 ### 6.3 Roles sugeridos
@@ -253,7 +262,8 @@ Líder de proyecto, responsable de hardware, responsable de firmware, responsabl
 ---
 
 ## 7. Anexos
-- A. Diagrama esquemático (pendiente)
-- B. Planos del chasis (pendiente)
+- A. Conexiones: tabla de pines y diagrama de energía en [`tutorial_conexion.md`](tutorial_conexion.md) (esquemático formal pendiente)
+- B. Prototipo 3D: [`modelo/robot_prototipo.blend`](modelo/robot_prototipo.blend) e imágenes en `img/` (planos de corte del chasis pendientes)
 - C. Bitácora de pruebas (pendiente)
 - D. Referencias
+- E. Presupuesto detallado con enlaces de compra: [`presupuesto.md`](presupuesto.md)
