@@ -21,6 +21,7 @@ En simulación, **mantén pulsado** el mapa para colocar un objeto; el robot lo 
 ## Ajustes que la app recuerda
 - **Cuarto:** en *Preparar* → tarjeta *Cuarto* se escriben el ancho y el largo del cuarto y a qué distancia de las paredes
   izquierda y superior está la base. El mapa, el visor 3D y el simulador usan esas medidas (por defecto 6 × 4 m).
+  Hay dos botones rápidos: **Clase: 2 × 2 m** (base a 25 cm de las paredes) y **Grande: 6 × 4 m**.
 - **Puntos guardados** e **IP del robot**: se conservan al cerrar la app (`shared_preferences`).
 
 En el mapa se dibuja el **recorrido** que lleva el robot desde que salió de la base y la distancia al destino elegido.

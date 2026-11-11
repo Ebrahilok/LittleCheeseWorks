@@ -5,7 +5,7 @@
 **Integrantes:** Ali Avila Ebrahim Alejandro; Molina Garcia Jesus Armando; Estavillo Servin Xavier; Ayala Noriega Rey David
 **Versión:** 0.3 (borrador) — se agregan presupuesto con enlaces de compra, tutorial de conexión y prototipo 3D
 
-**Documentos relacionados:** [Presupuesto y enlaces de compra](presupuesto.md) · [Tutorial de armado y conexión](tutorial_conexion.md) · [Modelo 3D](modelo/robot_prototipo.blend)
+**Documentos relacionados:** [Presupuesto y enlaces de compra](presupuesto.md) · [Tutorial de armado y conexión](tutorial_conexion.md) · [Modelo 3D](modelo/robot_prototipo.blend) · [Versión reducida para 2 × 2 m](robot_mini_2x2.md)
 
 ---
 
@@ -121,14 +121,16 @@ El detalle pieza por pieza, con enlaces de compra y reparto entre los integrante
 | Grupo | Plan A (el más barato) | Plan B (todo nacional) |
 |---|---|---|
 | Electrónica, batería y cargador (UNIT Electronics, precios verificados) | $1,050 | $1,050 |
-| Tracción y paro de emergencia | $249 (AliExpress) | $886 (motores UNIT + piezas estimadas) |
+| Tracción y paro de emergencia | $249 (AliExpress) | $656–816 (motores UNIT + piezas estimadas) |
 | Chasis, tornillería y cableado (compra local, estimado) | $300 | $300 |
 | Envío (estimado) | $150 | $150 |
-| Imprevistos (10 %) | $175 | $239 |
-| **Total** | **$1,924** | **$2,625** |
-| **Por persona (4 integrantes)** | **$481** | **$656** |
+| Imprevistos (10 %) | $175 | $216–232 |
+| **Total** | **$1,924** | **$2,372–2,548** |
+| **Por persona (4 integrantes)** | **$481** | **$593–637** |
 
-Ambos planes quedan por debajo del tope de 300 USD (RNF-05): entre 96 y 154 USD con un tipo de cambio de 17 a 20 pesos por dólar.
+Para una clase existe además una **versión reducida (robot mini para un cuarto de 2 × 2 m)** de unos $860 en total, $215 por persona, que no cumple los requisitos de carga, autonomía ni precisión: ver [`robot_mini_2x2.md`](robot_mini_2x2.md).
+
+Ambos planes quedan por debajo del tope de 300 USD (RNF-05): entre 96 y 150 USD con un tipo de cambio de 17 a 20 pesos por dólar.
 
 ### 3.4 Consideraciones de diseño
 - Centro de gravedad bajo; bandeja con borde y superficie antideslizante.

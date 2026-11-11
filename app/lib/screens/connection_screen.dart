@@ -217,6 +217,14 @@ class _RoomDialogState extends State<_RoomDialog> {
     super.dispose();
   }
 
+  void _preset(Room r) => setState(() {
+        _width.text = '${r.width}';
+        _height.text = '${r.height}';
+        _baseX.text = '${r.baseX}';
+        _baseY.text = '${r.baseY}';
+        _error = null;
+      });
+
   double? _num(TextEditingController c) =>
       double.tryParse(c.text.trim().replaceAll(',', '.'));
 
@@ -253,6 +261,23 @@ class _RoomDialogState extends State<_RoomDialog> {
             children: [
               const Text('Mide el cuarto y dónde vas a poner la base '
                   '(el punto de partida del robot).'),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  ActionChip(
+                    key: const Key('presetClase'),
+                    label: const Text('Clase: 2 × 2 m'),
+                    onPressed: () => _preset(
+                        const Room.fromSize(width: 2, height: 2, baseX: 0.25, baseY: 0.25)),
+                  ),
+                  ActionChip(
+                    key: const Key('presetGrande'),
+                    label: const Text('Grande: 6 × 4 m'),
+                    onPressed: () => _preset(Room.standard),
+                  ),
+                ],
+              ),
               _field('Ancho (izquierda a derecha)', _width, const Key('roomWidth')),
               _field('Largo (arriba a abajo)', _height, const Key('roomHeight')),
               _field('Base: distancia a la pared izquierda', _baseX, const Key('roomBaseX')),

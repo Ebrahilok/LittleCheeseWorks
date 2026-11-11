@@ -54,6 +54,21 @@ void main() {
     expect(find.text('Cuarto: 8 × 5.50 m'), findsOneWidget);
   });
 
+  testWidgets('App: preajuste de cuarto de clase 2 × 2 m', (t) async {
+    t.view.physicalSize = const Size(900, 1400);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    await t.pumpWidget(const ProviderScope(child: RobotCargaApp()));
+    await t.tap(find.text('Cuarto: 6 × 4 m'));
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const Key('presetClase')));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Guardar'));
+    await t.pumpAndSettle();
+    expect(find.text('Cuarto: 2 × 2 m'), findsOneWidget);
+    expect(find.textContaining('Base a 0.25 m'), findsOneWidget);
+  });
+
   testWidgets('App: simulación, calibrar y ver mapa/3D/estado', (t) async {
     t.view.physicalSize = const Size(900, 1400);
     t.view.devicePixelRatio = 1;
