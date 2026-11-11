@@ -23,7 +23,10 @@ class StatusScreen extends ConsumerWidget {
     final st = session.status;
 
     if (!session.connected) {
-      return const Center(child: Text('Sin conexión con el robot.'));
+      return Center(
+          child: Text(session.reconnecting
+              ? 'Conexión perdida: reconectando…'
+              : 'Sin conexión con el robot.'));
     }
 
     return ListView(
@@ -47,7 +50,8 @@ class StatusScreen extends ConsumerWidget {
                     ' · ${st.hasLoad ? 'con carga' : 'sin carga'}'),
                 if (st.target != null)
                   Text('Destino: (${st.target!.dx.toStringAsFixed(2)}, '
-                      '${st.target!.dy.toStringAsFixed(2)}) m'),
+                      '${st.target!.dy.toStringAsFixed(2)}) m'
+                      ' · faltan ${session.distanceToTarget!.toStringAsFixed(2)} m'),
               ],
             ),
           ),

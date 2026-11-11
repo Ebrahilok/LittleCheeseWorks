@@ -33,6 +33,27 @@ void main() {
     expect(tester(t), isNull);
   });
 
+  testWidgets('App: editar las medidas del cuarto', (t) async {
+    t.view.physicalSize = const Size(900, 1400);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    await t.pumpWidget(const ProviderScope(child: RobotCargaApp()));
+    expect(find.text('Cuarto: 6 × 4 m'), findsOneWidget);
+
+    await t.tap(find.text('Cuarto: 6 × 4 m'));
+    await t.pumpAndSettle();
+    await t.enterText(find.byKey(const Key('roomWidth')), '0.3');
+    await t.tap(find.text('Guardar'));
+    await t.pumpAndSettle();
+    expect(find.textContaining('Cada lado debe medir'), findsOneWidget);
+
+    await t.enterText(find.byKey(const Key('roomWidth')), '8');
+    await t.enterText(find.byKey(const Key('roomHeight')), '5,5'); // coma decimal
+    await t.tap(find.text('Guardar'));
+    await t.pumpAndSettle();
+    expect(find.text('Cuarto: 8 × 5.50 m'), findsOneWidget);
+  });
+
   testWidgets('App: simulación, calibrar y ver mapa/3D/estado', (t) async {
     t.view.physicalSize = const Size(900, 1400);
     t.view.devicePixelRatio = 1;

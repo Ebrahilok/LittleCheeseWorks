@@ -31,7 +31,9 @@ class SimulatedRobotService implements RobotService {
   final double stopDistance;
   final Duration unloadTimeout;
   final Duration obstacleTimeout;
-  final Room room;
+
+  /// Se puede cambiar en marcha (el usuario edita el cuarto en la app).
+  Room room;
 
   static const _arrivalRadius = 0.05;
   static const _robotHalfWidth = 0.2;

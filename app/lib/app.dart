@@ -63,7 +63,20 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             ),
         ],
       ),
-      body: pages[_index],
+      body: Column(
+        children: [
+          if (session.reconnecting)
+            Material(
+              color: Theme.of(context).colorScheme.errorContainer,
+              child: const ListTile(
+                dense: true,
+                leading: Icon(Icons.wifi_off),
+                title: Text('Conexión perdida con el robot. Reconectando…'),
+              ),
+            ),
+          Expanded(child: pages[_index]),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) {
