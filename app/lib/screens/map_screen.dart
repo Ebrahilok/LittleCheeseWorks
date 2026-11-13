@@ -82,6 +82,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           objects: s.objects,
                           selected: _selected,
                           points: s.savedPoints,
+                          trail: s.trail,
                         ),
                       ),
                     );
@@ -101,7 +102,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               children: [
                 Text(_selected == null
                     ? 'Toca el mapa para elegir el destino'
-                    : 'Destino: (${_selected!.dx.toStringAsFixed(2)}, ${_selected!.dy.toStringAsFixed(2)}) m'),
+                    : 'Destino: (${_selected!.dx.toStringAsFixed(2)}, ${_selected!.dy.toStringAsFixed(2)}) m'
+                        ' · a ${(_selected! - s.status.position).distance.toStringAsFixed(2)} m del robot'),
                 if (s.savedPoints.isNotEmpty)
                   Wrap(
                     spacing: 6,
@@ -165,6 +167,7 @@ class _MapPainter extends CustomPainter {
     required this.objects,
     required this.selected,
     required this.points,
+    this.trail = const [],
   });
 
   final Room room;
@@ -172,6 +175,9 @@ class _MapPainter extends CustomPainter {
   final List<DetectedObject> objects;
   final Offset? selected;
   final List<SavedPoint> points;
+
+  /// Recorrido ya hecho por el robot.
+  final List<Offset> trail;
 
   @override
   bool shouldRepaint(covariant _MapPainter old) => true;
@@ -214,6 +220,22 @@ class _MapPainter extends CustomPainter {
       canvas.drawRect(
           Rect.fromCenter(center: c(o.x, o.y), width: o.w * sx, height: o.h * sy),
           Paint()..color = const Color(0xFFD84315));
+    }
+
+    // Recorrido ya hecho.
+    if (trail.length > 1) {
+      final path = Path()..moveTo(c(trail.first.dx, trail.first.dy).dx, c(trail.first.dx, trail.first.dy).dy);
+      for (final p in trail.skip(1)) {
+        final q = c(p.dx, p.dy);
+        path.lineTo(q.dx, q.dy);
+      }
+      canvas.drawPath(
+          path,
+          Paint()
+            ..color = const Color(0x661565C0)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 3
+            ..strokeJoin = StrokeJoin.round);
     }
 
     // Destino y trayectoria.
