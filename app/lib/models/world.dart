@@ -5,16 +5,64 @@ import 'dart:ui';
 class Room {
   const Room({this.minX = -0.5, this.minY = -0.5, this.maxX = 5.5, this.maxY = 3.5});
 
+  /// Cuarto de [width] × [height] metros con la base a [baseX] m de la pared
+  /// izquierda y [baseY] m de la pared superior (vista superior).
+  const Room.fromSize({
+    required double width,
+    required double height,
+    double baseX = 0.5,
+    double baseY = 0.5,
+  })  : minX = -baseX,
+        minY = -baseY,
+        maxX = width - baseX,
+        maxY = height - baseY;
+
   final double minX, minY, maxX, maxY;
 
   double get width => maxX - minX;
   double get height => maxY - minY;
+
+  /// Distancia de la base a la pared izquierda / superior.
+  double get baseX => -minX;
+  double get baseY => -minY;
   Offset get center => Offset((minX + maxX) / 2, (minY + maxY) / 2);
+
+  /// Un cuarto es válido si mide entre 1 y 20 m por lado y contiene la base.
+  bool get isValid =>
+      width >= minSide &&
+      height >= minSide &&
+      width <= maxSide &&
+      height <= maxSide &&
+      contains(Offset.zero);
+
+  static const minSide = 1.0;
+  static const maxSide = 20.0;
 
   bool contains(Offset p) =>
       p.dx >= minX && p.dx <= maxX && p.dy >= minY && p.dy <= maxY;
 
   Offset clamp(Offset p) => Offset(p.dx.clamp(minX, maxX), p.dy.clamp(minY, maxY));
+
+  factory Room.fromJson(Map<String, dynamic> json) => Room(
+        minX: (json['minX'] as num).toDouble(),
+        minY: (json['minY'] as num).toDouble(),
+        maxX: (json['maxX'] as num).toDouble(),
+        maxY: (json['maxY'] as num).toDouble(),
+      );
+
+  Map<String, dynamic> toJson() =>
+      {'minX': minX, 'minY': minY, 'maxX': maxX, 'maxY': maxY};
+
+  @override
+  bool operator ==(Object other) =>
+      other is Room &&
+      other.minX == minX &&
+      other.minY == minY &&
+      other.maxX == maxX &&
+      other.maxY == maxY;
+
+  @override
+  int get hashCode => Object.hash(minX, minY, maxX, maxY);
 
   static const standard = Room();
 }
@@ -58,4 +106,12 @@ class SavedPoint {
   final String name;
   final double x, y;
   Offset get position => Offset(x, y);
+
+  factory SavedPoint.fromJson(Map<String, dynamic> json) => SavedPoint(
+        json['name'] as String,
+        (json['x'] as num).toDouble(),
+        (json['y'] as num).toDouble(),
+      );
+
+  Map<String, dynamic> toJson() => {'name': name, 'x': x, 'y': y};
 }
