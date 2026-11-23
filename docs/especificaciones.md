@@ -206,7 +206,7 @@ El visor 3D es un renderizador propio en Dart (cámara orbital con perspectiva),
 ## 5. Plan de pruebas
 
 ### 5.1 Niveles
-1. **Unitarias**: parser de mensajes, simulador, proyección 3D (automatizadas en `app/test`).
+1. **Unitarias**: parser de mensajes, simulador, proyección 3D (automatizadas en `app-flutter/test`).
 2. **Integración**: motores + encoders + sensores + comunicación.
 3. **Sistema/campo**: recorridos completos en un cuarto marcado.
 
