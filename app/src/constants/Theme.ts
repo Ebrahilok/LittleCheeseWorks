@@ -1,0 +1,37 @@
+export const Colores = {
+  primario: '#E8590C',
+  primarioOscuro: '#B8430A',
+  primarioSuave: '#FFF0E6',
+  fondo: '#F6F4F0',
+  tarjeta: '#FFFFFF',
+  texto: '#1F2328',
+  textoSuave: '#5F6670',
+  borde: '#DDD8D0',
+  peligro: '#C62828',
+  peligroSuave: '#FDECEA',
+  exito: '#2E7D32',
+  aviso: '#EF8F00',
+  info: '#1565C0',
+  // Mapa
+  piso: '#F7F4EC',
+  base: 'rgba(67,160,71,0.4)',
+  punto: '#7B1FA2',
+  objeto: '#D84315',
+  robot: '#1565C0',
+  rumbo: '#FFC107',
+  carga: '#FFA000',
+  destino: '#C62828',
+  seleccion: '#FB8C00',
+  recorrido: 'rgba(21,101,192,0.4)',
+};
+
+export const COLOR_ESTADO: Record<string, string> = {
+  ESPERANDO_CARGA: '#546E7A',
+  LISTO: Colores.exito,
+  EN_RUTA: Colores.info,
+  REGRESANDO: Colores.info,
+  OBSTACULO: Colores.aviso,
+  ENTREGANDO: '#00796B',
+  ERROR: Colores.peligro,
+  PARO: Colores.peligro,
+};
