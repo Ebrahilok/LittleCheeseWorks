@@ -1,0 +1,71 @@
+name: APK Android
+
+# Compila la app de React Native y publica el APK en Releases.
+# Corre sola cuando cambia algo en app/ y también se puede lanzar a mano (Actions > APK Android > Run workflow).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - '.github/workflows/apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Revisar tipos y correr pruebas
+        run: |
+          npx tsc --noEmit
+          npm test
+
+      - name: Generar el proyecto Android
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Compilar APK
+        run: |
+          cd android
+          ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk ../PequenoQueso.apk
+
+      - name: Publicar en Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-v1.0.${{ github.run_number }}
+          name: App Pequeño Queso v1.0.${{ github.run_number }}
+          make_latest: true
+          files: app/PequenoQueso.apk
+          body: |
+            APK de la app en React Native para Android 10 o superior.
+
+            **Cómo instalarla:** abre este enlace desde el celular, descarga `PequenoQueso.apk` y ábrelo.
+            Android va a pedir permiso para instalar apps de fuentes desconocidas.
+            Si ya tenías una versión anterior, desinstálala primero.
+
+            **Para usarla:**
+            - Sin servidor: en el login pulsa "Probar sin servidor (modo demo)".
+            - Con la API: corre el backend en la computadora y en el login escribe su IP, por ejemplo `http://192.168.1.70:5150`. El celular tiene que estar en la misma red WiFi.
+
+            Commit: ${{ github.sha }}

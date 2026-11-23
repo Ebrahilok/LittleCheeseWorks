@@ -20,3 +20,7 @@ dotnet run --launch-profile http
 ```
 
 Al arrancar aplica las migraciones solo. Swagger queda en http://localhost:5150.
+
+La API escucha en todas las interfaces (`0.0.0.0:5150`) para que el celular la encuentre en la red WiFi.
+En la app se escribe la IP de la computadora (`ipconfig` > Dirección IPv4), por ejemplo `http://192.168.1.70:5150`.
+La primera vez Windows pregunta si deja pasar a la API por el firewall: hay que aceptar en redes privadas.
