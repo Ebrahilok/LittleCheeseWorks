@@ -13,6 +13,7 @@ Proyecto de la Universidad Autónoma de Occidente.
 | **Versión de clase: robot mini para 2 × 2 m (~$215 por persona)** | [`docs/robot_mini_2x2.md`](docs/robot_mini_2x2.md) |
 | Modelo 3D del prototipo (Blender) | [`docs/modelo/`](docs/modelo/) |
 | App Flutter (Android, iOS, escritorio, web) | [`app/`](app/) |
+| API en ASP.NET Core (.NET 10) con PostgreSQL: login con JWT y CRUD de cuartos y puntos | [`backend/`](backend/) |
 | Sketches para comprobar el cableado | [`firmware/prueba_conexiones/`](firmware/prueba_conexiones/) (robot grande) · [`firmware/prueba_mini/`](firmware/prueba_mini/) (robot mini) |
 
 **Estado:** la app funciona con el robot simulado. El firmware del robot (navegación y servidor WebSocket) está pendiente; `firmware/` solo contiene el sketch de prueba de conexiones.
