@@ -67,7 +67,7 @@ export class RobotSimulado implements RobotService {
         break;
       case 'goto':
         // Calibrado y sin falla se puede mandar a otro punto en cualquier momento
-        if (this.st.calibrado && !esFalla(this.st.estado)) {
+        if (this.st.calibrado && !esFalla(this.st.estado) && Number.isFinite(c.x) && Number.isFinite(c.y)) {
           const destino = ajustarAlCuarto(this.cuarto, { x: c.x, y: c.y });
           this.cambiar({ ...this.st, estado: 'EN_RUTA', destino, obstaculo: false });
         }

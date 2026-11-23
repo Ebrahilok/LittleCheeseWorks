@@ -122,6 +122,14 @@ describe('robot simulado', () => {
     assert.equal(sim.status.estado, 'LISTO');
   });
 
+  test('ignora destinos que no son número', () => {
+    const { sim } = crearSimulador();
+    sim.enviar({ cmd: 'calibrate' });
+    sim.enviar({ cmd: 'goto', x: NaN, y: 1 });
+    assert.equal(sim.status.estado, 'LISTO');
+    assert.equal(sim.status.destino, null);
+  });
+
   test('el destino se ajusta a los límites del cuarto', () => {
     const { sim } = crearSimulador();
     sim.enviar({ cmd: 'calibrate' });

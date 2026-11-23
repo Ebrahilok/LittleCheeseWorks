@@ -21,7 +21,7 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: Colores.fondo },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Mapa', tabBarIcon: icono('map') }} />
+      <Tabs.Screen name="mapa" options={{ title: 'Mapa', tabBarIcon: icono('map') }} />
       <Tabs.Screen name="puntos" options={{ title: 'Puntos', headerShown: false, tabBarIcon: icono('bookmark') }} />
       <Tabs.Screen name="robot" options={{ title: 'Robot', tabBarIcon: icono('hardware-chip') }} />
       <Tabs.Screen

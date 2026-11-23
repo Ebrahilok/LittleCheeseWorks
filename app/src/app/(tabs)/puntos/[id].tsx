@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCuarto } from '@/features/cuarto/CuartoContext';
 import type { PuntoGuardado } from '@/features/cuarto/cuartoApi';
@@ -15,26 +15,34 @@ export default function DetallePunto() {
   const robot = useRobot();
   const [punto, setPunto] = useState<PuntoGuardado | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const eliminado = useRef(false);
 
   // Se vuelve a pedir al servidor cada vez que la pantalla se muestra (por si se editó)
   useFocusEffect(useCallback(() => {
+    if (eliminado.current) return;
     obtenerPunto(Number(id)).then(setPunto).catch((e: Error) => setError(e.message));
   }, [id, obtenerPunto]));
 
+  const confirmarBorrado = async () => {
+    try {
+      await eliminarPunto(Number(id));
+      eliminado.current = true;
+      router.back();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+
   const borrar = () => {
-    Alert.alert('Eliminar punto', `¿Seguro que quieres eliminar "${punto?.nombre}"?`, [
+    const pregunta = `¿Seguro que quieres eliminar "${punto?.nombre}"?`;
+    // En la versión web Alert no muestra botones, se usa el confirm del navegador
+    if (Platform.OS === 'web') {
+      if (window.confirm(pregunta)) void confirmarBorrado();
+      return;
+    }
+    Alert.alert('Eliminar punto', pregunta, [
       { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Eliminar', style: 'destructive',
-        onPress: async () => {
-          try {
-            await eliminarPunto(Number(id));
-            router.back();
-          } catch (e) {
-            setError((e as Error).message);
-          }
-        },
-      },
+      { text: 'Eliminar', style: 'destructive', onPress: confirmarBorrado },
     ]);
   };
 
@@ -62,7 +70,7 @@ export default function DetallePunto() {
       <BotonAccion titulo="Llevar carga aquí" icono="send" deshabilitado={!puedeEnviar} estilo={{ marginTop: 16 }}
         onPress={() => {
           robot.irA(punto);
-          router.navigate('/');
+          router.navigate('/mapa');
         }} />
       {!puedeEnviar && <Text style={e.nota}>Conecta y calibra el robot en la pestaña Robot para mandarlo aquí.</Text>}
       <View style={e.fila}>

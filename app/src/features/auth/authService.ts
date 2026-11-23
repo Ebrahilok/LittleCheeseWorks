@@ -1,5 +1,17 @@
-import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
+import * as SecureStoreNativo from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, cargarServidor, ponerToken } from '@/shared/api/axiosInstance';
+
+// En Android/iOS el token va cifrado; en la versión web (solo para pruebas) no existe
+// secure-store y se usa el almacenamiento del navegador.
+const SecureStore = Platform.OS === 'web'
+  ? {
+      setItemAsync: (k: string, v: string) => AsyncStorage.setItem(k, v),
+      getItemAsync: (k: string) => AsyncStorage.getItem(k),
+      deleteItemAsync: (k: string) => AsyncStorage.removeItem(k),
+    }
+  : SecureStoreNativo;
 import type { ApiResponse } from '@/shared/api/axiosInstance';
 import type { LoginDto, RegistroDto, Sesion, Usuario } from './types';
 

@@ -34,8 +34,18 @@ export function MapaCuarto({ cuarto, status, objetos = [], puntos = [], recorrid
   const px = (x: number) => (x - l.minX) * escala;
   const py = (y: number) => (y - l.minY) * escala;
 
-  const aMetros = (e: GestureResponderEvent): Punto =>
-    ajustarAlCuarto(cuarto, { x: l.minX + e.nativeEvent.locationX / escala, y: l.minY + e.nativeEvent.locationY / escala });
+  // En Android/iOS el toque trae locationX/Y; en la versión web viene como offsetX/Y
+  const aMetros = (e: GestureResponderEvent): Punto | null => {
+    const n = e.nativeEvent as unknown as Record<string, number | undefined>;
+    const lx = Number.isFinite(n.locationX) ? n.locationX! : n.offsetX;
+    const ly = Number.isFinite(n.locationY) ? n.locationY! : n.offsetY;
+    if (!Number.isFinite(lx) || !Number.isFinite(ly)) return null;
+    return ajustarAlCuarto(cuarto, { x: l.minX + lx! / escala, y: l.minY + ly! / escala });
+  };
+  const alTocar = (f?: (p: Punto) => void) => (f ? (e: GestureResponderEvent) => {
+    const p = aMetros(e);
+    if (p) f(p);
+  } : undefined);
 
   const lineas: number[] = [];
   for (let x = Math.ceil(l.minX); x <= l.maxX; x++) lineas.push(x);
@@ -49,8 +59,8 @@ export function MapaCuarto({ cuarto, status, objetos = [], puntos = [], recorrid
     <View onLayout={(e: LayoutChangeEvent) => setAnchoDisp(e.nativeEvent.layout.width)} style={{ width: '100%', alignItems: 'center' }}>
       {ancho > 0 && (
         <Pressable
-          onPress={onTocar ? (e) => onTocar(aMetros(e)) : undefined}
-          onLongPress={onMantener ? (e) => onMantener(aMetros(e)) : undefined}
+          onPress={alTocar(onTocar)}
+          onLongPress={alTocar(onMantener)}
           accessibilityLabel="Mapa del cuarto"
           style={{ width: ancho, height: alto }}
         >

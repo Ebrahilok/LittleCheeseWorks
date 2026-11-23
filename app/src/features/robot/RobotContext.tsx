@@ -78,7 +78,12 @@ export function RobotProvider({ children }: { children: ReactNode }) {
       dispatch({ tipo: 'DESCONECTAR' });
     },
     calibrar: () => enviar({ cmd: 'calibrate' }),
-    irA: (p) => enviar({ cmd: 'goto', x: Number(p.x.toFixed(2)), y: Number(p.y.toFixed(2)) }),
+    irA: (p) => {
+      // Nunca se manda un destino que no sea número (el robot real no sabría qué hacer)
+      if (Number.isFinite(p.x) && Number.isFinite(p.y)) {
+        enviar({ cmd: 'goto', x: Number(p.x.toFixed(2)), y: Number(p.y.toFixed(2)) });
+      }
+    },
     retirarCarga: () => enviar({ cmd: 'unload' }),
     paro: () => enviar({ cmd: 'stop' }),
     reiniciar: () => enviar({ cmd: 'reset' }),

@@ -19,6 +19,8 @@ function Navegacion() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      {/* Decide a dónde ir según la sesión */}
+      <Stack.Screen name="index" />
       {/* Pestañas: solo con sesión */}
       <Stack.Protected guard={estado === 'authenticated'}>
         <Stack.Screen name="(tabs)" />
